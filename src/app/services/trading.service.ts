@@ -19,7 +19,9 @@ export class TradingService {
       positions: [],
       closedPositions: [],
       trades: [],
-      nextPositionId: 1
+      nextPositionId: 1,
+      nextLongLabel: 1,
+      nextShortLabel: 1
     };
   }
 
@@ -42,7 +44,8 @@ export class TradingService {
       throw new Error('証拠金が不足しています');
     }
 
-    const longCount = state.positions.filter(p => p.type === PositionType.LONG).length + 1;
+    // 連番でラベルを付与（決済済みも含めて一意）
+    const longLabel = state.nextLongLabel++;
 
     const position: Position = {
       id: state.nextPositionId++,
@@ -50,7 +53,7 @@ export class TradingService {
       entryDate: currentDate,
       entryPrice: currentPrice,
       quantity: quantity,
-      label: `買い${longCount}`
+      label: `買い${longLabel}`
     };
 
     state.cash -= margin;
@@ -89,7 +92,8 @@ export class TradingService {
       throw new Error('証拠金が不足しています');
     }
 
-    const shortCount = state.positions.filter(p => p.type === PositionType.SHORT).length + 1;
+    // 連番でラベルを付与（決済済みも含めて一意）
+    const shortLabel = state.nextShortLabel++;
 
     const position: Position = {
       id: state.nextPositionId++,
@@ -97,7 +101,7 @@ export class TradingService {
       entryDate: currentDate,
       entryPrice: currentPrice,
       quantity: quantity,
-      label: `売り${shortCount}`
+      label: `売り${shortLabel}`
     };
 
     state.cash -= margin;

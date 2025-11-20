@@ -27,6 +27,14 @@ export class App {
     this.currentView = 'result';
   }
 
+  retry(): void {
+    // 同じ条件でシミュレーションを再開
+    if (this.config) {
+      this.state = undefined;
+      this.currentView = 'simulation';
+    }
+  }
+
   restart(): void {
     this.currentView = 'config';
     this.config = undefined;

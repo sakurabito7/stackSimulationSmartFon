@@ -13,9 +13,14 @@ import { Trade } from '../../models/trade.model';
 export class ResultComponent {
   @Input() state!: SimulationState;
   @Output() restart = new EventEmitter<void>();
+  @Output() retry = new EventEmitter<void>();
 
   onRestart(): void {
     this.restart.emit();
+  }
+
+  onRetry(): void {
+    this.retry.emit();
   }
 
   // CSVエクスポート

@@ -19,6 +19,8 @@ export interface SimulationState {
   closedPositions: ClosedPosition[];  // 決済済みポジション
   trades: Trade[];             // 全取引履歴
   nextPositionId: number;      // 次のポジションID
+  nextLongLabel: number;       // 次のロングポジションラベル番号
+  nextShortLabel: number;      // 次のショートポジションラベル番号
   performance?: PerformanceMetrics;  // 投資成績（シミュレーション終了時）
 }
 

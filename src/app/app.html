@@ -13,7 +13,7 @@
     }
 
     @if (currentView === 'result' && state) {
-      <app-result [state]="state" (restart)="restart()"></app-result>
+      <app-result [state]="state" (restart)="restart()" (retry)="retry()"></app-result>
     }
   </main>
 </div>
