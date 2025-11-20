@@ -103,12 +103,12 @@ h3 {
 .export-button,
 .restart-button,
 .retry-button {
-  padding: 8px 12px;
-  font-size: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  min-height: 32px;
+  min-height: 44px;
   width: 100%;
   font-weight: 500;
   transition: opacity 0.2s;

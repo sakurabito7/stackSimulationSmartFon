@@ -114,14 +114,14 @@
     </div>
 
     <div class="actions-section">
-      <button class="export-button" (click)="exportToCSV()">
-        売買履歴をCSVエクスポート
+      <button class="restart-button" (click)="onRestart()">
+        最初からやり直す
       </button>
       <button class="retry-button" (click)="onRetry()">
         同じ条件でもう一度実行する
       </button>
-      <button class="restart-button" (click)="onRestart()">
-        最初からやり直す
+      <button class="export-button" (click)="exportToCSV()">
+        売買履歴をCSVエクスポート
       </button>
     </div>
   } @else {
