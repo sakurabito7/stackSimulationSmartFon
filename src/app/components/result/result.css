@@ -33,7 +33,7 @@ h3 {
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   margin-top: 4px;
 }
@@ -47,14 +47,14 @@ h3 {
 }
 
 .metric-label {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--color-label);
   margin-bottom: 2px;
   font-weight: 500;
 }
 
 .metric-value {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--color-text);
 }
