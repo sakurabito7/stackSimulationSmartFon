@@ -3,13 +3,16 @@
 ## プロジェクト概要
 
 このプロジェクトは、スマホ用の株式投資シミュレーションWebアプリケーションです。
+Firebase Hostingにデプロイされており、987銘柄の実データを使用してリアルな取引シミュレーションが可能です。
 
 ### 主な機能
 - 4分割グリッドレイアウト（スマホ最適化）
 - ロング/ショート両建て取引
-- 3倍レバレッジ信用取引
-- 相殺決済機能
+- 3倍レバレッジ信用取引（証拠金30%）
+- 相殺決済機能（クリックで一括決済）
 - 投資成績分析
+- 条件付きスタイリング（±3%枠、±8%黄色ラベル）
+- アニメーション無効化（パフォーマンス向上）
 
 ## 技術スタック
 
@@ -17,17 +20,25 @@
 - **TypeScript**: 5.8.2
 - **Chart.js**: 4.5.1
 - **ng2-charts**: 8.0.0
+- **chartjs-plugin-datalabels**: 2.2.0
+- **Firebase Hosting**: デプロイプラットフォーム
 
 ## セットアップ手順
 
-### 1. 依存関係のインストール
+### 1. リポジトリのクローン
 
 ```bash
-cd stock-simulation
+git clone git@github.com:sakurabito7/stackSimulationSmartFon.git
+cd stackSimulationSmartFon
+```
+
+### 2. 依存関係のインストール
+
+```bash
 npm install
 ```
 
-### 2. 開発サーバーの起動
+### 3. 開発サーバーの起動
 
 ```bash
 npm start
@@ -35,11 +46,21 @@ npm start
 
 ブラウザで http://localhost:4200 にアクセスしてください。
 
-### 3. ビルド
+### 4. ビルド
 
 ```bash
 npm run build
 ```
+
+ビルド成果物は `dist/stock-simulation/browser/` に出力されます。
+
+### 5. Firebase Hostingへのデプロイ
+
+```bash
+firebase deploy --only hosting
+```
+
+デプロイURL: https://stock-simulation-ac580.web.app
 
 ## プロジェクト構造
 
@@ -47,369 +68,325 @@ npm run build
 stock-simulation/
 ├── src/
 │   ├── app/
-│   │   ├── components/          # UIコンポーネント（実装予定）
-│   │   ├── models/              # データモデル（完成）
+│   │   ├── components/
+│   │   │   ├── start-config/      # 初期設定画面
+│   │   │   │   ├── start-config.ts
+│   │   │   │   ├── start-config.html
+│   │   │   │   └── start-config.css
+│   │   │   ├── simulation/        # メインシミュレーション画面
+│   │   │   │   ├── simulation.ts
+│   │   │   │   ├── simulation.html
+│   │   │   │   └── simulation.css
+│   │   │   └── result/            # 結果画面
+│   │   │       ├── result.ts
+│   │   │       ├── result.html
+│   │   │       └── result.css
+│   │   ├── models/                # データモデル
 │   │   │   ├── position.model.ts
 │   │   │   ├── trade.model.ts
 │   │   │   ├── stock-data.model.ts
 │   │   │   └── simulation-config.model.ts
-│   │   ├── services/            # ビジネスロジック（完成）
+│   │   ├── services/              # ビジネスロジック
 │   │   │   ├── stock-data.service.ts
 │   │   │   ├── trading.service.ts
 │   │   │   └── calculation.service.ts
-│   │   ├── app.ts               # ルートコンポーネント（基本実装完了）
+│   │   ├── app.ts                 # ルートコンポーネント
 │   │   ├── app.html
-│   │   └── app.css
-│   ├── styles.css               # グローバルスタイル
+│   │   ├── app.css
+│   │   └── app.config.ts          # アプリ設定
+│   ├── styles.css                 # グローバルスタイル
 │   └── index.html
 ├── public/
 │   └── assets/
-│       └── stock-data/          # CSVデータ配置場所
-└── package.json
+│       └── stock-data/            # 987銘柄のCSVデータ
+│           ├── stocks.json        # 銘柄コードリスト
+│           ├── 1301.csv
+│           ├── 1305.csv
+│           └── ... (987ファイル)
+├── firebase.json                  # Firebase設定
+├── .firebaserc                    # Firebaseプロジェクト設定
+├── package.json
+├── angular.json
+├── tsconfig.json
+└── README.md
 ```
 
 ## 実装済みの機能
 
-### ✅ データモデル
-- Position（ポジション）
-- Trade（取引）
-- StockData（株価データ）
-- SimulationConfig（シミュレーション設定）
-- SimulationState（シミュレーション状態）
-- PerformanceMetrics（投資成績）
+### ✅ データモデル（`src/app/models/`）
 
-### ✅ サービス層
-- **StockDataService**: CSVファイル読み込み、データ管理
-- **TradingService**: ポジション管理、取引実行、投資成績計算
-- **CalculationService**: テクニカル指標計算、相殺決済ポイント算出
-
-### ✅ ルートコンポーネント
-- 画面遷移管理（設定→シミュレーション→結果）
-- 基本的なレイアウト
-
-### ✅ スタイリング
-- スマホ用4分割グリッドレイアウト
-- レスポンシブデザイン
-- 色定義（仕様書準拠）
-
-## 次に実装すべきコンポーネント
-
-以下のコンポーネントを実装してください。各コンポーネントのスケルトンと実装例は次のセクションを参照してください。
-
-### 1. 初期設定画面（start-config）
-
-```bash
-ng generate component components/start-config --standalone
+#### Position（ポジション）
+```typescript
+export interface Position {
+  id: number;
+  type: PositionType;  // LONG | SHORT
+  entryDate: Date;
+  entryPrice: number;
+  quantity: number;
+  label: string;
+}
 ```
 
-**責務**:
-- CSV読み込み
+#### Trade（取引）
+```typescript
+export interface Trade {
+  date: Date;
+  action: TradeAction;  // BUY | SELL
+  price: number;
+  quantity: number;
+  positionType: PositionType;
+  positionId: number;
+  label: string;
+  isClosing: boolean;
+  profit?: number;
+}
+```
+
+#### SimulationConfig（シミュレーション設定）
+```typescript
+export interface SimulationConfig {
+  symbol: string;
+  startDate: Date;
+  period: number;
+  initialCash: number;
+  tradeAmount: number;
+  maxPositions: number;
+  csvFile?: File;
+}
+```
+
+### ✅ サービス層（`src/app/services/`）
+
+#### StockDataService
+- CSVファイル読み込み
+- 株価データ管理
+- 987銘柄対応
+
+#### TradingService
+- ポジション開設・決済
+- 信用取引（証拠金30%）
+- 投資成績計算
+- ポートフォリオ評価
+
+#### CalculationService
+- 相殺決済ポイント算出
+- テクニカル指標計算
+
+### ✅ コンポーネント（`src/app/components/`）
+
+#### 1. start-config（初期設定画面）
+
+**機能**:
+- 987銘柄のドロップダウン選択
 - シミュレーション設定入力
-- バリデーション
+- CSVファイルの動的読み込み
 
-**Output**:
-- `@Output() start: EventEmitter<SimulationConfig>`
+**主要メソッド**:
+- `ngOnInit()`: stocks.jsonから銘柄リストを読み込み
+- `onPreloadFileSelected()`: 選択された銘柄のCSVを読み込み
+- `onSubmit()`: 設定を親コンポーネントに送信
 
-### 2. メインシミュレーション画面（simulation）
+#### 2. simulation（メインシミュレーション画面）
 
-```bash
-ng generate component components/simulation --standalone
-```
+**4つのパネル構成**:
 
-**責務**:
-- 子コンポーネントの統括
-- 4分割グリッドレイアウトの実装
-- ユーザー操作の処理
-
-**プロパティ**:
-- `@Input() config: SimulationConfig`
-- `state: SimulationState`
-
-**Output**:
-- `@Output() finish: EventEmitter<SimulationState>`
-
-### 3. 資産情報パネル（info-panel）
-
-```bash
-ng generate component components/info-panel --standalone
-```
-
-**表示内容**:
+##### 左上: 資産情報パネル
 - 現在日付、経過日数
 - 現在価格、現金残高
-- 総資産、損益
-- ポジション明細（直近5件）
-- 相殺決済ポイント
+- 総資産、損益・損益率
+- 相殺決済ポイント一覧（SP1, SP2...）
+  - クリックで該当ポジションを一括決済
+  - 現在価格での損益を表示
 
-### 4. 操作パネル（control-panel）
+##### 右上: 売買履歴
+- 過去90日分のテーブル表示
+- 日付、終値、前日比
+- 売買情報と損益
+- 現在の日をハイライト表示
 
-```bash
-ng generate component components/control-panel --standalone
-```
+##### 左下: 操作パネル（2列レイアウト）
+- **左列**:
+  - 買いボタン
+  - 売りボタン
+  - 次の日へボタン（大きめ）
+  - 終了ボタン
+- **右列**:
+  - 決済ボタン一覧（2行表示）
+    - 1行目: 買1 100（ラベル+株数）
+    - 2行目: 6000（価格）
 
-**機能**:
-- 買いボタン（プルダウン）
-- 売りボタン（プルダウン）
-- 次の日へボタン
-- 終了ボタン
+##### 右下: ポジション状態
+- Chart.js散布図によるポジション可視化
+- ロング（青）/ショート（赤）の識別
+- 現在価格ライン表示（緑、ラインの上にラベル）
+- 相殺決済ポイントライン（オレンジ、SP1, SP2...）
+- Y軸: 過去3ヶ月の株価平均を中心に設定
+- 条件付きスタイリング:
+  - ±3%超: ポジションに枠表示（買い=青、売り=赤）
+  - ±8%超: ラベルが黄色に変化
+- アニメーション無効（`animation: false`）
 
-### 5. 売買履歴（trade-history）
+**主要メソッド**:
+- `initializeSimulation()`: シミュレーション初期化
+- `openLongPosition()`, `openShortPosition()`: ポジション開設
+- `closeLongPosition()`, `closeShortPosition()`: ポジション決済
+- `closeOffsetPoint()`: 相殺決済ポイントの一括決済
+- `nextDay()`: 日付を進める
+- `updateScatterChart()`: 散布図更新
+- `calculateOffsetPointProfit()`: 相殺決済ポイントの損益計算
 
-```bash
-ng generate component components/trade-history --standalone
-```
-
-**表示内容**:
-- 過去90日分の履歴テーブル
-- 終値、前日比、連続上げ下げ数
-- 売買、数量、ラベル、損益
-
-### 6. 散布図（scatter-plot）
-
-```bash
-ng generate component components/scatter-plot --standalone
-```
-
-**機能**:
-- Chart.jsを使用したポジション散布図
-- ロング（青）/ショート（赤）の可視化
-- 現在価格の表示
-
-### 7. 結果画面（result）
-
-```bash
-ng generate component components/result --standalone
-```
+#### 3. result（結果画面）
 
 **表示内容**:
 - 投資成績サマリー
-- 売買履歴エクスポート
+  - 勝率、損益率
+  - 期待値、最大ドローダウン
+  - 総取引数、勝ち数、負け数
+  - 平均利益、平均損失
+  - プロフィットファクター
 
-## 実装例：start-configコンポーネント
+### ✅ スタイリング
 
-```typescript
-// start-config.ts
-import { Component, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { SimulationConfig } from '../../models/simulation-config.model';
-import { StockDataService } from '../../services/stock-data.service';
-
-@Component({
-  selector: 'app-start-config',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
-    <div class="config-container">
-      <h2>シミュレーション設定</h2>
-
-      <form (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <label>CSVファイル</label>
-          <input type="file" accept=".csv" (change)="onFileSelected($event)">
-        </div>
-
-        <div class="form-group">
-          <label>開始日</label>
-          <input type="date" [(ngModel)]="startDate" name="startDate" required>
-        </div>
-
-        <div class="form-group">
-          <label>期間（日数）</label>
-          <input type="number" [(ngModel)]="period" name="period" min="1" required>
-        </div>
-
-        <div class="form-group">
-          <label>初期資金（円）</label>
-          <input type="number" [(ngModel)]="initialCash" name="initialCash" min="1" required>
-        </div>
-
-        <div class="form-group">
-          <label>売買単位（円）</label>
-          <input type="number" [(ngModel)]="tradeAmount" name="tradeAmount" min="1" required>
-        </div>
-
-        <button type="submit" [disabled]="!csvFile">シミュレーション開始</button>
-      </form>
-    </div>
-  `
-})
-export class StartConfigComponent {
-  @Output() start = new EventEmitter<SimulationConfig>();
-
-  csvFile?: File;
-  startDate: string = '2014-01-01';
-  period: number = 100;
-  initialCash: number = 1000000;
-  tradeAmount: number = 100000;
-
-  constructor(private stockDataService: StockDataService) {}
-
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.csvFile = input.files[0];
-    }
-  }
-
-  async onSubmit(): Promise<void> {
-    if (!this.csvFile) return;
-
-    // CSVデータを読み込み
-    await this.stockDataService.loadStockDataFromCSV(this.csvFile);
-
-    const config: SimulationConfig = {
-      symbol: this.csvFile.name.replace('.csv', ''),
-      startDate: new Date(this.startDate),
-      period: this.period,
-      initialCash: this.initialCash,
-      tradeAmount: this.tradeAmount,
-      maxPositions: 5,
-      csvFile: this.csvFile
-    };
-
-    this.start.emit(config);
-  }
+#### グローバルスタイル（`src/styles.css`）
+```css
+:root {
+  --color-profit: #1976D2;    /* 利益 - 青 */
+  --color-loss: #D32F2F;      /* 損失 - 赤 */
+  --color-long: #2196F3;      /* 買い - 青 */
+  --color-short: #f44336;     /* 売り - 赤 */
+  --color-highlight: #2196F3; /* 強調 */
 }
 ```
 
-## 4分割グリッドレイアウトの実装例
+#### レイアウト
+- 4分割グリッド（`grid-template-rows: 1fr 1fr`）
+- 固定行で縦方向の変形を防止
+- min-height: 0 で overflow 制御
+- flexbox による内部レイアウト
+
+## 重要な実装ポイント
+
+### 1. 総資産の正確な計算
+
+```typescript
+calculatePortfolioValue(positions: Position[], currentPrice: number): number {
+  return positions.reduce((total, position) => {
+    const positionValue = position.quantity * position.entryPrice;
+    const margin = positionValue / 3; // 預けている証拠金
+
+    let unrealizedPL = 0;
+    if (position.type === PositionType.LONG) {
+      unrealizedPL = (currentPrice - position.entryPrice) * position.quantity;
+    } else {
+      unrealizedPL = (position.entryPrice - currentPrice) * position.quantity;
+    }
+
+    return total + margin + unrealizedPL;
+  }, 0);
+}
+```
+
+ポイント: 証拠金 + 含み損益を計算することで、売買の瞬間に総資産が変動しない
+
+### 2. Y軸の安定化
+
+```typescript
+// 過去3ヶ月の株価データを取得
+const threeMonthsAgo = Math.max(0, this.currentDay - 89);
+const recentPrices = this.stockData.slice(threeMonthsAgo, this.currentDay + 1);
+
+// 過去3ヶ月の株価平均値を計算（Y軸の中央値）
+const averagePrice = recentPrices.reduce((sum, price) => sum + price, 0) / recentPrices.length;
+```
+
+ポイント: ポジション価格ではなく、過去3ヶ月の株価範囲を基準にY軸を設定
+
+### 3. 条件付きスタイリング
+
+```typescript
+longPositions.forEach(p => {
+  const profitRate = ((this.currentPrice - p.entryPrice) / p.entryPrice) * 100;
+  const absProfitRate = Math.abs(profitRate);
+
+  // ±3%を超えた場合、青い枠を付ける
+  if (absProfitRate > 3) {
+    longBorderColors.push('rgba(33, 150, 243, 1)');
+    longBorderWidths.push(3);
+  }
+
+  // ±8%を超えた場合、ラベルを黄色に
+  if (absProfitRate > 8) {
+    longLabelColors.push('#FFEB3B');
+  }
+});
+```
+
+### 4. 固定レイアウト
 
 ```css
-/* simulation.css */
 .simulation-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 10px;
+  grid-template-rows: 1fr 1fr;  /* autoではなく1fr 1frで固定 */
+  gap: 8px;
   height: calc(100vh - 120px);
 }
 
-.grid-area-info {
-  grid-area: 1 / 1 / 2 / 2;
-  overflow-y: auto;
-}
-
-.grid-area-history {
-  grid-area: 1 / 2 / 2 / 3;
-  overflow-y: auto;
-}
-
-.grid-area-control {
-  grid-area: 2 / 1 / 3 / 2;
-  overflow-y: auto;
-}
-
-.grid-area-scatter {
-  grid-area: 2 / 2 / 3 / 3;
-  overflow-y: auto;
-}
-
-@media (max-width: 768px) {
-  .simulation-container {
-    gap: 5px;
-  }
+.grid-area-info, .grid-area-history,
+.grid-area-control, .grid-area-scatter {
+  overflow: hidden;
+  min-height: 0;  /* overflow制御のために必須 */
+  display: flex;
+  flex-direction: column;
 }
 ```
 
-## Chart.jsの使用例
+## 開発コマンド
 
-```typescript
-import { Component } from '@angular/core';
-import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration } from 'chart.js';
+```bash
+# 開発サーバー起動
+npm start
 
-@Component({
-  selector: 'app-scatter-plot',
-  standalone: true,
-  imports: [BaseChartDirective],
-  template: `
-    <canvas baseChart
-      [type]="'scatter'"
-      [data]="scatterChartData"
-      [options]="scatterChartOptions">
-    </canvas>
-  `
-})
-export class ScatterPlotComponent {
-  scatterChartData: ChartConfiguration['data'] = {
-    datasets: [
-      {
-        label: 'ロング',
-        data: [{x: 1, y: 1000}, {x: 2, y: 1050}],
-        backgroundColor: 'rgba(54, 162, 235, 0.9)',
-        pointRadius: 8
-      },
-      {
-        label: 'ショート',
-        data: [{x: 3, y: 1020}],
-        backgroundColor: 'rgba(255, 99, 132, 0.9)',
-        pointRadius: 8
-      }
-    ]
-  };
+# ビルド
+npm run build
 
-  scatterChartOptions: ChartConfiguration['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        type: 'linear',
-        min: 0,
-        max: 5
-      },
-      y: {
-        type: 'linear'
-      }
-    }
-  };
-}
+# 本番ビルド
+npm run build -- --configuration production
+
+# Firebaseデプロイ
+firebase deploy --only hosting
+
+# Gitにコミット
+git add .
+git commit -m "your message"
+git push origin master
 ```
 
-## サービスの使用例
+## データの追加方法
 
-```typescript
-import { TradingService } from '../services/trading.service';
+### 新しい株価データの追加
 
-// ロングポジションを開く
-this.tradingService.openLongPosition(
-  this.state,
-  currentPrice,
-  currentDate,
-  this.config.tradeAmount
-);
+1. CSVファイルを `public/assets/stock-data/` に配置
+   - ファイル名: `{銘柄コード}.csv`
+   - フォーマット: 日付,始値,高値,安値,終値,出来高
 
-// ポジションを決済
-this.tradingService.closeLongPosition(
-  this.state,
-  positionId,
-  currentPrice,
-  currentDate
-);
+2. `public/assets/stock-data/stocks.json` に銘柄コードを追加
+   ```json
+   [
+     "1301",
+     "1305",
+     ...
+     "9999"  // 新しい銘柄コード
+   ]
+   ```
 
-// 評価額を計算
-const portfolioValue = this.tradingService.calculatePortfolioValue(
-  this.state.positions,
-  currentPrice
-);
-```
-
-## テストデータの準備
-
-`public/assets/stock-data/`フォルダにCSVファイルを配置してください。
-
-**CSVフォーマット**:
-```csv
-日付,始値,高値,安値,終値,出来高
-2014-01-06,5810,5880,5810,5880,8769100
-2014-01-07,5890,5920,5870,5890,7221100
-```
+3. ビルドしてデプロイ
 
 ## トラブルシューティング
 
 ### Chart.jsが表示されない
 
-`app.config.ts`で Chart.js を登録してください：
+`app.config.ts`でChart.jsを登録してください：
 
 ```typescript
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
@@ -422,19 +399,87 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
+### レイアウトが崩れる
+
+- `grid-template-rows: 1fr 1fr` が設定されているか確認
+- 各グリッドエリアに `min-height: 0` が設定されているか確認
+- overflow設定が適切か確認
+
+### 総資産が売買時に変動する
+
+`calculatePortfolioValue()` が証拠金と含み損益の両方を含んでいるか確認：
+```typescript
+return total + margin + unrealizedPL;
+```
+
 ### ビルドエラーが発生する
 
-依存関係を再インストールしてください：
-
+依存関係を再インストール：
 ```bash
 rm -rf node_modules package-lock.json
 npm install
 ```
 
+### Firebaseデプロイでエラー
+
+1. Firebase CLIがインストールされているか確認
+   ```bash
+   npm install -g firebase-tools
+   ```
+
+2. ログインしているか確認
+   ```bash
+   firebase login
+   ```
+
+3. プロジェクトが正しく設定されているか確認
+   ```bash
+   firebase use --add
+   ```
+
+## パフォーマンス最適化
+
+### 実装済みの最適化
+
+1. **アニメーション無効化**
+   ```typescript
+   scatterChartOptions = {
+     animation: false,  // アニメーションを無効化
+     ...
+   };
+   ```
+
+2. **固定レイアウト**
+   - `grid-template-rows: 1fr 1fr` で再レイアウトを最小化
+
+3. **データラベルの選択的表示**
+   ```typescript
+   display: (context: any) => {
+     return label !== '現在価格' && !label.startsWith('SP');
+   }
+   ```
+
+## セキュリティ考慮事項
+
+- CSVファイルは静的アセットとして配信
+- ユーザー入力のバリデーション実装済み
+- XSS対策としてAngularの組み込み機能を使用
+
 ## 参考資料
 
 - [Angular公式ドキュメント](https://angular.dev/)
 - [Chart.js公式ドキュメント](https://www.chartjs.org/)
-- [ng2-charts](https://github.com/valor-software/ng2-charts)
-- `IMPLEMENTATION-PLAN2.md` - 詳細な実装計画書
-- `stock-simulation-spec2.md` - 機能仕様書
+- [ng2-charts GitHub](https://github.com/valor-software/ng2-charts)
+- [chartjs-plugin-datalabels](https://chartjs-plugin-datalabels.netlify.app/)
+- [Firebase Hosting](https://firebase.google.com/docs/hosting)
+
+## サポート
+
+問題が発生した場合は、GitHubのIssuesで報告してください：
+https://github.com/sakurabito7/stackSimulationSmartFon/issues
+
+---
+
+**最終更新**: 2025年11月20日
+**バージョン**: 1.0.0
+**ステータス**: ✅ 完成・デプロイ済み
