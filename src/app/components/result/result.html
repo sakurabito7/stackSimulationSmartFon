@@ -1,0 +1,132 @@
+<div class="result-container">
+  <h2>シミュレーション結果</h2>
+
+  @if (state && state.performance) {
+    <div class="summary-section">
+      <h3>投資成績サマリー</h3>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">総資産</div>
+          <div class="metric-value">
+            {{ state.cash | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">総利益</div>
+          <div class="metric-value profit">
+            +{{ state.performance.totalProfit | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">総損失</div>
+          <div class="metric-value loss">
+            -{{ state.performance.totalLoss | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">純損益</div>
+          <div class="metric-value" [class.profit]="(state.performance.totalProfit - state.performance.totalLoss) > 0" [class.loss]="(state.performance.totalProfit - state.performance.totalLoss) < 0">
+            {{ (state.performance.totalProfit - state.performance.totalLoss) > 0 ? '+' : '' }}{{ (state.performance.totalProfit - state.performance.totalLoss) | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">利益率</div>
+          <div class="metric-value" [class.profit]="state.performance.profitRate > 0" [class.loss]="state.performance.profitRate < 0">
+            {{ state.performance.profitRate > 0 ? '+' : '' }}{{ state.performance.profitRate | number:'1.2-2' }}%
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">取引回数</div>
+          <div class="metric-value">
+            {{ state.performance.totalTrades }}回
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">勝率</div>
+          <div class="metric-value" [class.profit]="winRate >= 50">
+            {{ winRate | number:'1.2-2' }}%
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">勝ちトレード</div>
+          <div class="metric-value profit">
+            {{ state.performance.winTrades }}回
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">負けトレード</div>
+          <div class="metric-value loss">
+            {{ state.performance.loseTrades }}回
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">平均利益</div>
+          <div class="metric-value profit">
+            +{{ state.performance.avgProfit | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">平均損失</div>
+          <div class="metric-value loss">
+            -{{ state.performance.avgLoss | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">期待値</div>
+          <div class="metric-value" [class.profit]="state.performance.expectedValue > 0" [class.loss]="state.performance.expectedValue < 0">
+            {{ state.performance.expectedValue > 0 ? '+' : '' }}{{ state.performance.expectedValue | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">最大ドローダウン</div>
+          <div class="metric-value loss">
+            -{{ state.performance.maxDrawdown | number:'1.0-0' }}円
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">プロフィットファクター</div>
+          <div class="metric-value" [class.profit]="state.performance.profitFactor > 1">
+            {{ state.performance.profitFactor | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trade-summary-section">
+      <h3>取引サマリー</h3>
+      <div class="summary-stats">
+        <p>総取引回数: <strong>{{ state.trades.length }}件</strong></p>
+        <p>決済取引回数: <strong>{{ state.performance.totalTrades }}件</strong></p>
+        <p>期間: <strong>{{ state.currentDay + 1 }}日間</strong></p>
+      </div>
+    </div>
+
+    <div class="actions-section">
+      <button class="export-button" (click)="exportToCSV()">
+        売買履歴をCSVエクスポート
+      </button>
+      <button class="restart-button" (click)="onRestart()">
+        最初からやり直す
+      </button>
+    </div>
+  } @else {
+    <div class="no-data">
+      <p>シミュレーション結果がありません</p>
+      <button class="restart-button" (click)="onRestart()">最初から</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,19 @@
+<div class="app-container">
+  <header class="app-header">
+    <h1>株式投資シミュレーション</h1>
+  </header>
+
+  <main class="app-main">
+    @if (currentView === 'config') {
+      <app-start-config (start)="onStartSimulation($event)"></app-start-config>
+    }
+
+    @if (currentView === 'simulation' && config) {
+      <app-simulation [config]="config" (finish)="onFinishSimulation($event)"></app-simulation>
+    }
+
+    @if (currentView === 'result' && state) {
+      <app-result [state]="state" (restart)="restart()"></app-result>
+    }
+  </main>
+</div>

@@ -1,0 +1,163 @@
+<div class="simulation-container">
+  <!-- 左上: 資産情報パネル -->
+  <div class="grid-area-info panel">
+    <h3>資産情報</h3>
+    <div class="info-section">
+      <div class="info-row">
+        <span class="label">現在日付:</span>
+        <span class="value">{{ currentDate | date:'yyyy/MM/dd' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">経過日数:</span>
+        <span class="value">{{ state.currentDay + 1 }}/{{ config.period }}日</span>
+      </div>
+      <div class="info-row">
+        <span class="label">現在価格:</span>
+        <span class="value">{{ currentPrice | number:'1.0-0' }}円</span>
+      </div>
+      <div class="info-row">
+        <span class="label">現金残高:</span>
+        <span class="value">{{ state.cash | number:'1.0-0' }}円</span>
+      </div>
+      <div class="info-row">
+        <span class="label">総資産:</span>
+        <span class="value">{{ totalAssets | number:'1.0-0' }}円</span>
+      </div>
+      <div class="info-row">
+        <span class="label">損益:</span>
+        <span class="value" [class.profit]="profitLoss > 0" [class.loss]="profitLoss < 0">
+          {{ profitLoss > 0 ? '+' : '' }}{{ profitLoss | number:'1.0-0' }}円
+          ({{ profitLossRate > 0 ? '+' : '' }}{{ profitLossRate | number:'1.2-2' }}%)
+        </span>
+      </div>
+    </div>
+
+    @if (offsetPoints.length > 0) {
+      <h4>相殺決済ポイント</h4>
+      <div class="offset-section">
+        @for (point of offsetPoints; track $index) {
+          <div class="offset-item offset-item-clickable" (click)="closeOffsetPoint(point)">
+            <div class="offset-price">
+              SP{{ $index + 1 }} {{ point.offsetPrice | number:'1.0-0' }}円
+              <span class="offset-profit" [class.profit]="calculateOffsetPointProfit(point) > 0" [class.loss]="calculateOffsetPointProfit(point) < 0">
+                ({{ calculateOffsetPointProfit(point) > 0 ? '+' : '' }}{{ calculateOffsetPointProfit(point) | number:'1.0-0' }})
+              </span>
+            </div>
+            <div class="offset-labels">{{ point.labels.join(', ') }}</div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- 右上: 売買履歴 -->
+  <div class="grid-area-history panel">
+    <h3>売買履歴（過去90日）</h3>
+    <div class="history-table-wrapper">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>終値</th>
+            <th>前日比</th>
+            <th>取引</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of historyData; track item.date) {
+            <tr [class.current-day]="getDateString(item.date) === getDateString(currentDate)">
+              <td>{{ item.date | date:'MM/dd' }}</td>
+              <td>{{ item.close | number:'1.0-0' }}</td>
+              <td [class.profit]="item.priceChangeRate > 0" [class.loss]="item.priceChangeRate < 0">
+                {{ item.priceChangeRate > 0 ? '+' : '' }}{{ item.priceChangeRate | number:'1.2-2' }}%
+              </td>
+              <td>
+                @if (item.trades && item.trades.length > 0) {
+                  @for (trade of item.trades; track $index) {
+                    <div class="trade-info" [class.long]="trade.positionType === 'LONG'" [class.short]="trade.positionType === 'SHORT'">
+                      {{ trade.action === 'BUY' ? '買' : '売' }}{{ extractNumber(trade.label) }}
+                      @if (trade.profit !== undefined && trade.profit !== null) {
+                        <span [class.profit]="trade.profit > 0" [class.loss]="trade.profit < 0">
+                          ({{ trade.profit > 0 ? '+' : '' }}{{ trade.profit | number:'1.0-0' }})
+                        </span>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <span class="no-trade">-</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 左下: 操作パネル -->
+  <div class="grid-area-control panel">
+    <h3>操作パネル</h3>
+
+    <div class="control-two-column">
+      <!-- 左列: 基本操作 -->
+      <div class="control-left-column">
+        <div class="control-group">
+          <button class="buy-button" (click)="openLongPosition(config.tradeAmount)" [disabled]="state.positions.length >= config.maxPositions">
+            買い {{ config.tradeAmount | number:'1.0-0' }}円
+          </button>
+        </div>
+
+        <div class="control-group">
+          <button class="sell-button" (click)="openShortPosition(config.tradeAmount)" [disabled]="state.positions.length >= config.maxPositions">
+            売り {{ config.tradeAmount | number:'1.0-0' }}円
+          </button>
+        </div>
+
+        <div class="control-group control-group-next">
+          <button class="next-button" (click)="nextDay()">次の日へ</button>
+        </div>
+
+        <div class="control-group">
+          <button class="finish-button" (click)="finishSimulation()">終了</button>
+        </div>
+      </div>
+
+      <!-- 右列: 決済エリア -->
+      <div class="control-right-column">
+        <div class="control-close-area">
+          @if (state.positions.length === 0) {
+            <p class="no-positions">ポジションなし</p>
+          } @else {
+            @for (position of state.positions; track position.id) {
+              <button
+                class="close-button"
+                [class.long]="position.type === 'LONG'"
+                [class.short]="position.type === 'SHORT'"
+                (click)="position.type === 'LONG' ? closeLongPosition(position.id) : closeShortPosition(position.id)">
+                <div class="close-button-line1">
+                  {{ position.type === 'LONG' ? '買' : '売' }}{{ extractNumber(position.label) }} {{ position.quantity }}
+                </div>
+                <div class="close-button-line2">
+                  {{ position.entryPrice | number:'1.0-0' }}
+                </div>
+              </button>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右下: 散布図 -->
+  <div class="grid-area-scatter panel">
+    <h3>ポジション状態</h3>
+    <div class="scatter-chart-container">
+      <canvas baseChart
+        [type]="'scatter'"
+        [data]="scatterChartData"
+        [options]="scatterChartOptions"
+        [plugins]="scatterChartPlugins">
+      </canvas>
+    </div>
+  </div>
+</div>
