@@ -16,9 +16,9 @@ export class StartConfigComponent implements OnInit {
 
   csvFile?: File;
   startDate: string = '2014-01-06';
-  period: number = 100;
+  period: number = 365;
   initialCash: number = 1000000;
-  tradeAmount: number = 100000;
+  tradeAmount: number = 200000;  // 初期資金の1/5
   maxPositions: number = 5;
   isLoading: boolean = false;
   errorMessage: string = '';
@@ -83,6 +83,15 @@ export class StartConfigComponent implements OnInit {
       this.csvFile = new File([blob], this.selectedPreloadFile, { type: 'text/csv' });
       this.useSampleData = true;
       this.errorMessage = '';
+
+      // CSVを読み込んで日付範囲を取得
+      await this.stockDataService.loadStockDataFromCSV(this.csvFile);
+      const allData = this.stockDataService.getAllData();
+
+      if (allData.length > 0) {
+        // ランダムな開始日を設定
+        this.setRandomStartDate(allData);
+      }
     } catch (error) {
       this.errorMessage = 'ファイルの読み込みに失敗しました: ' + (error as Error).message;
       this.csvFile = undefined;
@@ -90,6 +99,77 @@ export class StartConfigComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  // ランダムな開始日を設定
+  private setRandomStartDate(stockData: any[]): void {
+    const firstDate = new Date(stockData[0].date);
+    const lastDate = new Date(stockData[stockData.length - 1].date);
+    const today = new Date();
+
+    // 10年前の日付
+    const tenYearsAgo = new Date(today);
+    tenYearsAgo.setFullYear(today.getFullYear() - 10);
+
+    // 5年前の日付
+    const fiveYearsAgo = new Date(today);
+    fiveYearsAgo.setFullYear(today.getFullYear() - 5);
+
+    let candidateStartDate: Date;
+    let candidateEndDate: Date;
+
+    // データの最初の日付が10年前以前かチェック
+    if (firstDate.getTime() <= tenYearsAgo.getTime()) {
+      // 10年前以前のデータがある場合
+      candidateStartDate = firstDate;
+      candidateEndDate = new Date(Math.min(tenYearsAgo.getTime(), lastDate.getTime()));
+    } else if (firstDate.getTime() <= fiveYearsAgo.getTime()) {
+      // 5年前以前のデータがある場合
+      candidateStartDate = firstDate;
+      candidateEndDate = new Date(Math.min(fiveYearsAgo.getTime(), lastDate.getTime()));
+    } else {
+      // 5年前以前のデータがない場合は、最初から利用可能な範囲で選択
+      candidateStartDate = firstDate;
+      candidateEndDate = lastDate;
+    }
+
+    // 期間分のデータが確保できる範囲でランダムに選択
+    const periodMillis = this.period * 24 * 60 * 60 * 1000;
+    const adjustedEndDate = new Date(Math.min(
+      candidateEndDate.getTime(),
+      lastDate.getTime() - periodMillis
+    ));
+
+    if (adjustedEndDate.getTime() < candidateStartDate.getTime()) {
+      // 期間分のデータが確保できない場合は最初の日付を使用
+      this.startDate = this.formatDate(firstDate);
+    } else {
+      // ランダムな日付を選択
+      const randomTime = candidateStartDate.getTime() +
+        Math.random() * (adjustedEndDate.getTime() - candidateStartDate.getTime());
+      const randomDate = new Date(randomTime);
+
+      // データが存在する最も近い日付を探す
+      const closestData = stockData.find(d => new Date(d.date).getTime() >= randomDate.getTime());
+      if (closestData) {
+        this.startDate = this.formatDate(new Date(closestData.date));
+      } else {
+        this.startDate = this.formatDate(firstDate);
+      }
+    }
+  }
+
+  // 日付をYYYY-MM-DD形式にフォーマット
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // 初期資金が変更されたときに売買単位を更新
+  onInitialCashChange(): void {
+    this.tradeAmount = Math.floor(this.initialCash / 5);
   }
 
   // サンプルデータを使用

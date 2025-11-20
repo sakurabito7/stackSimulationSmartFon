@@ -49,6 +49,7 @@
         id="initialCash"
         [(ngModel)]="initialCash"
         name="initialCash"
+        (ngModelChange)="onInitialCashChange()"
         min="10000"
         step="10000"
         required>
