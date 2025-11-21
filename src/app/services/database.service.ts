@@ -51,7 +51,8 @@ export class DatabaseService {
         maxDrawdown: state.performance?.maxDrawdown || 0,
         profitFactor: state.performance?.profitFactor || 0
       },
-      trades: state.trades
+      trades: state.trades,
+      dailyData: state.dailyData  // 日次データを保存
     };
 
     const collectionRef = collection(this.firestore, 'simulations');

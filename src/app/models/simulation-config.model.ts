@@ -11,6 +11,15 @@ export interface SimulationConfig {
   csvFile?: File;              // CSVファイル（アップロード時）
 }
 
+export interface DailyData {
+  date: Date;                  // 日付
+  cash: number;                // 現金残高
+  unrealizedProfit: number;    // 含み損益
+  totalValue: number;          // 総資産（現金+含み損益）
+  positionCount: number;       // ポジション数
+  currentPrice: number;        // その日の株価
+}
+
 export interface SimulationState {
   currentDay: number;          // 現在の経過日数（0始まり）
   currentDate: Date;           // 現在日付
@@ -21,6 +30,7 @@ export interface SimulationState {
   nextPositionId: number;      // 次のポジションID
   nextLongLabel: number;       // 次のロングポジションラベル番号
   nextShortLabel: number;      // 次のショートポジションラベル番号
+  dailyData: DailyData[];      // 日次データ（全日分）
   performance?: PerformanceMetrics;  // 投資成績（シミュレーション終了時）
 }
 

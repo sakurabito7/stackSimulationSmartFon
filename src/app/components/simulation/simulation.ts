@@ -208,6 +208,9 @@ export class SimulationComponent implements OnInit, OnChanges {
 
     // 初期データを設定
     this.updateCurrentData();
+
+    // 初日の日次データを記録
+    this.recordDailyData();
   }
 
   private updateCurrentData(): void {
@@ -398,6 +401,9 @@ export class SimulationComponent implements OnInit, OnChanges {
     this.checkMarginMaintenance();
 
     this.updateCurrentData();
+
+    // 新しい日のデータを記録（重複チェック付き）
+    this.recordDailyData();
   }
 
   // 期限切れポジションの強制決済（6ヶ月）
@@ -448,8 +454,36 @@ export class SimulationComponent implements OnInit, OnChanges {
     }
   }
 
+  // 日次データを記録
+  private recordDailyData(): void {
+    // 既に同じ日付が記録されているかチェック（重複防止）
+    const lastRecord = this.state.dailyData[this.state.dailyData.length - 1];
+    if (lastRecord && this.getDateString(lastRecord.date) === this.getDateString(this.currentDate)) {
+      // 既に記録済みの場合はスキップ
+      return;
+    }
+
+    const unrealizedProfit = this.tradingService.calculatePortfolioValue(
+      this.state.positions,
+      this.currentPrice
+    );
+    const totalValue = this.state.cash + unrealizedProfit;
+
+    this.state.dailyData.push({
+      date: new Date(this.currentDate),
+      cash: this.state.cash,
+      unrealizedProfit: unrealizedProfit,
+      totalValue: totalValue,
+      positionCount: this.state.positions.length,
+      currentPrice: this.currentPrice
+    });
+  }
+
   // シミュレーション終了
   finishSimulation(): void {
+    // 最終日の日次データを記録
+    this.recordDailyData();
+
     // すべてのポジションを決済
     const remainingPositions = [...this.state.positions];
     remainingPositions.forEach(p => {

@@ -21,7 +21,8 @@ export class TradingService {
       trades: [],
       nextPositionId: 1,
       nextLongLabel: 1,
-      nextShortLabel: 1
+      nextShortLabel: 1,
+      dailyData: []
     };
   }
 

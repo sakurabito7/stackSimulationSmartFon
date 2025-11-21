@@ -10,6 +10,31 @@ import { Trade } from '../models/trade.model';
 export class ExportService {
 
   /**
+   * 日次データをCSV形式に変換
+   */
+  generateDailyDataCSV(dailyData: any[]): string {
+    try {
+      const headers = ['日付', '現金残高', '含み損益', '総資産', 'ポジション数', '株価'];
+      const rows = dailyData.map(data => [
+        this.formatTradeDate(data.date),
+        data.cash?.toString() || '0',
+        data.unrealizedProfit?.toString() || '0',
+        data.totalValue?.toString() || '0',
+        data.positionCount?.toString() || '0',
+        data.currentPrice?.toString() || '0'
+      ]);
+
+      return [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+    } catch (error) {
+      console.error('日次データCSV生成エラー:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 取引履歴をCSV形式に変換
    */
   generateCSV(trades: Trade[]): string {
@@ -99,20 +124,20 @@ export class ExportService {
   }
 
   /**
-   * 単一のシミュレーションCSVをダウンロード
+   * 単一のシミュレーションCSVをダウンロード（日次データ）
    */
   downloadSingleCSV(record: SimulationRecord): void {
     try {
-      console.log('CSVダウンロード開始:', record);
-      const csv = this.generateCSV(record.trades);
+      console.log('日次データCSVダウンロード開始:', record);
+      const csv = this.generateDailyDataCSV(record.dailyData || []);
       const bom = '\uFEFF';
       const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
-      const fileName = `simulation_${this.formatDateForFileName(record.createdAt)}.csv`;
+      const fileName = `daily_data_${this.formatDateForFileName(record.createdAt)}.csv`;
       saveAs(blob, fileName);
-      console.log('CSVダウンロード完了:', fileName);
+      console.log('日次データCSVダウンロード完了:', fileName);
     } catch (error) {
-      console.error('CSVダウンロードエラー:', error);
-      alert('CSVダウンロードに失敗しました: ' + (error as Error).message);
+      console.error('日次データCSVダウンロードエラー:', error);
+      alert('日次データCSVダウンロードに失敗しました: ' + (error as Error).message);
     }
   }
 
@@ -140,13 +165,22 @@ export class ExportService {
         throw new Error('サマリーCSVの生成に失敗しました');
       }
 
-      // 各シミュレーションのCSVを追加
+      // 各シミュレーションの日次データCSVを追加
       records.forEach((record, index) => {
         try {
           console.log(`シミュレーション ${index + 1} 処理中...`);
-          const csv = this.generateCSV(record.trades);
-          const fileName = `simulation_${String(index + 1).padStart(3, '0')}_${this.formatDateForFileName(record.createdAt)}.csv`;
-          zip.file(fileName, '\uFEFF' + csv);
+
+          // 日次データCSV
+          const dailyDataCSV = this.generateDailyDataCSV(record.dailyData || []);
+          const dailyFileName = `daily_data_${String(index + 1).padStart(3, '0')}_${this.formatDateForFileName(record.createdAt)}.csv`;
+          zip.file(dailyFileName, '\uFEFF' + dailyDataCSV);
+
+          // 取引履歴CSV（オプション：参考用に含める）
+          if (record.trades && record.trades.length > 0) {
+            const tradesCSV = this.generateCSV(record.trades);
+            const tradesFileName = `trades_${String(index + 1).padStart(3, '0')}_${this.formatDateForFileName(record.createdAt)}.csv`;
+            zip.file(tradesFileName, '\uFEFF' + tradesCSV);
+          }
         } catch (error) {
           console.error(`シミュレーション ${index + 1} CSV生成エラー:`, error);
           // エラーがあっても続行

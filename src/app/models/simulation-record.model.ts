@@ -1,5 +1,6 @@
 import { Timestamp } from '@angular/fire/firestore';
 import { Trade } from './trade.model';
+import { DailyData } from './simulation-config.model';
 
 export interface SimulationRecord {
   id?: string;
@@ -32,4 +33,5 @@ export interface SimulationRecord {
   };
 
   trades: Trade[];
+  dailyData: DailyData[];  // 日次データ（全日分）
 }
