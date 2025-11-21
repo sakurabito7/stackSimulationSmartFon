@@ -20,63 +20,67 @@
       </small>
     </div>
 
-    <div class="form-group">
-      <label for="startDate">開始日 *</label>
-      <input
-        type="date"
-        id="startDate"
-        [(ngModel)]="startDate"
-        name="startDate"
-        required>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label for="startDate">開始日 *</label>
+        <input
+          type="date"
+          id="startDate"
+          [(ngModel)]="startDate"
+          name="startDate"
+          required>
+      </div>
+
+      <div class="form-group">
+        <label for="period">期間（日数） *</label>
+        <input
+          type="number"
+          id="period"
+          [(ngModel)]="period"
+          name="period"
+          min="1"
+          max="1000"
+          required>
+      </div>
+
+      <div class="form-group">
+        <label for="maxPositions">最大ポジション数 *</label>
+        <input
+          type="number"
+          id="maxPositions"
+          [(ngModel)]="maxPositions"
+          name="maxPositions"
+          min="1"
+          max="20"
+          required>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="period">期間（日数） *</label>
-      <input
-        type="number"
-        id="period"
-        [(ngModel)]="period"
-        name="period"
-        min="1"
-        max="1000"
-        required>
-    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="initialCash">初期資金（円） *</label>
+        <input
+          type="number"
+          id="initialCash"
+          [(ngModel)]="initialCash"
+          name="initialCash"
+          (ngModelChange)="onInitialCashChange()"
+          min="10000"
+          step="10000"
+          required>
+      </div>
 
-    <div class="form-group">
-      <label for="initialCash">初期資金（円） *</label>
-      <input
-        type="number"
-        id="initialCash"
-        [(ngModel)]="initialCash"
-        name="initialCash"
-        (ngModelChange)="onInitialCashChange()"
-        min="10000"
-        step="10000"
-        required>
-    </div>
-
-    <div class="form-group">
-      <label for="tradeAmount">売買単位（円） *</label>
-      <input
-        type="number"
-        id="tradeAmount"
-        [(ngModel)]="tradeAmount"
-        name="tradeAmount"
-        min="10000"
-        step="10000"
-        required>
-    </div>
-
-    <div class="form-group">
-      <label for="maxPositions">最大ポジション数 *</label>
-      <input
-        type="number"
-        id="maxPositions"
-        [(ngModel)]="maxPositions"
-        name="maxPositions"
-        min="1"
-        max="20"
-        required>
+      <div class="form-group">
+        <label for="tradeAmount">売買単位（円） *</label>
+        <input
+          type="number"
+          id="tradeAmount"
+          [(ngModel)]="tradeAmount"
+          name="tradeAmount"
+          min="10000"
+          step="10000"
+          required>
+      </div>
     </div>
 
     <div class="error-message" *ngIf="errorMessage">
