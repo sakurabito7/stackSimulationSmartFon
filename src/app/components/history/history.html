@@ -1,0 +1,70 @@
+<div class="history-container">
+  <div class="header">
+    <h2>シミュレーション履歴</h2>
+    <button class="back-button" (click)="onBack()">戻る</button>
+  </div>
+
+  <div class="actions-bar">
+    <button class="bulk-download-button" (click)="downloadBulk()" [disabled]="isDownloading || records.length === 0">
+      {{ isDownloading ? 'ダウンロード中...' : '一括DL' }}
+    </button>
+    <span class="record-count">{{ records.length }}件</span>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading">読み込み中...</div>
+  }
+
+  @if (errorMessage) {
+    <div class="error-message">{{ errorMessage }}</div>
+  }
+
+  @if (!isLoading && records.length === 0 && !errorMessage) {
+    <div class="no-data">
+      <p>シミュレーション履歴がありません</p>
+    </div>
+  }
+
+  @if (!isLoading && records.length > 0) {
+    <div class="history-list">
+      @for (record of records; track record.id) {
+        <div class="record-card">
+          <div class="record-header">
+            <span class="record-date">{{ formatDateTime(record.createdAt) }}</span>
+          </div>
+          <div class="record-info">
+            <div class="info-row">
+              <span class="info-label">CSV:</span>
+              <span class="info-value">{{ record.config.csvFileName }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">期間:</span>
+              <span class="info-value">{{ record.config.period }}日</span>
+              <span class="info-label">初期資金:</span>
+              <span class="info-value">{{ record.config.initialCash | number }}円</span>
+            </div>
+          </div>
+          <div class="record-summary">
+            <div class="summary-item" [class.profit]="isProfitable(record.summary.netProfit)" [class.loss]="!isProfitable(record.summary.netProfit)">
+              <span class="summary-label">純損益:</span>
+              <span class="summary-value">
+                {{ record.summary.netProfit > 0 ? '+' : '' }}{{ record.summary.netProfit | number }}円
+              </span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">利益率:</span>
+              <span class="summary-value">{{ record.summary.profitRate | number:'1.2-2' }}%</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">勝率:</span>
+              <span class="summary-value">{{ record.summary.winRate | number:'1.2-2' }}%</span>
+            </div>
+          </div>
+          <div class="record-actions">
+            <button class="csv-button" (click)="downloadCSV(record)">CSV</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

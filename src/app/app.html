@@ -5,15 +5,19 @@
 
   <main class="app-main">
     @if (currentView === 'config') {
-      <app-start-config (start)="onStartSimulation($event)"></app-start-config>
+      <app-start-config (start)="onStartSimulation($event)" (showHistory)="showHistory()"></app-start-config>
+    }
+
+    @if (currentView === 'history') {
+      <app-history (back)="backFromHistory()"></app-history>
     }
 
     @if (currentView === 'simulation' && config) {
       <app-simulation [config]="config" (finish)="onFinishSimulation($event)"></app-simulation>
     }
 
-    @if (currentView === 'result' && state) {
-      <app-result [state]="state" (restart)="restart()" (retry)="retry()"></app-result>
+    @if (currentView === 'result' && state && config) {
+      <app-result [state]="state" [config]="config" [csvFileName]="csvFileName" (restart)="restart()" (retry)="retry()"></app-result>
     }
   </main>
 </div>

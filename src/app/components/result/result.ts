@@ -1,7 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SimulationState } from '../../models/simulation-config.model';
+import { SimulationState, SimulationConfig } from '../../models/simulation-config.model';
 import { Trade } from '../../models/trade.model';
+import { DatabaseService } from '../../services/database.service';
 
 @Component({
   selector: 'app-result',
@@ -12,8 +13,15 @@ import { Trade } from '../../models/trade.model';
 })
 export class ResultComponent {
   @Input() state!: SimulationState;
+  @Input() config!: SimulationConfig;
+  @Input() csvFileName: string = '';
   @Output() restart = new EventEmitter<void>();
   @Output() retry = new EventEmitter<void>();
+
+  isSaving = false;
+  saveMessage = '';
+
+  constructor(private databaseService: DatabaseService) {}
 
   onRestart(): void {
     this.restart.emit();
@@ -21,6 +29,33 @@ export class ResultComponent {
 
   onRetry(): void {
     this.retry.emit();
+  }
+
+  // データベースに保存
+  async saveToDatabase(): Promise<void> {
+    if (!this.state || !this.config) {
+      alert('保存するデータがありません');
+      return;
+    }
+
+    this.isSaving = true;
+    this.saveMessage = '';
+
+    try {
+      const id = await this.databaseService.saveSimulation(this.state, this.config, this.csvFileName);
+      this.saveMessage = '保存しました';
+      setTimeout(() => {
+        this.saveMessage = '';
+      }, 3000);
+    } catch (error) {
+      console.error('保存エラー:', error);
+      this.saveMessage = '保存に失敗しました';
+      setTimeout(() => {
+        this.saveMessage = '';
+      }, 3000);
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   // CSVエクスポート

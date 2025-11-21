@@ -93,6 +93,13 @@
       class="submit-button">
       {{ isLoading ? '読み込み中...' : 'シミュレーション開始' }}
     </button>
+
+    <button
+      type="button"
+      (click)="showHistory.emit()"
+      class="history-button">
+      履歴を見る
+    </button>
   </form>
 
   <div class="info-section">

@@ -133,6 +133,7 @@ h2 {
   cursor: pointer;
   min-height: 48px;
   transition: background-color 0.2s;
+  margin-bottom: 10px;
 }
 
 .submit-button:hover:not(:disabled) {
@@ -147,6 +148,28 @@ h2 {
   background-color: #ccc;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.history-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  background-color: #FF9800;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  min-height: 44px;
+  transition: background-color 0.2s;
+}
+
+.history-button:hover {
+  background-color: #F57C00;
+}
+
+.history-button:active {
+  background-color: #E65100;
 }
 
 .info-section {

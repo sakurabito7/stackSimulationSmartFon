@@ -12,7 +12,8 @@ import { StockDataService } from '../../services/stock-data.service';
   styleUrl: './start-config.css'
 })
 export class StartConfigComponent implements OnInit {
-  @Output() start = new EventEmitter<SimulationConfig>();
+  @Output() start = new EventEmitter<{ config: SimulationConfig; fileName: string }>();
+  @Output() showHistory = new EventEmitter<void>();
 
   csvFile?: File;
   startDate: string = '2014-01-06';
@@ -217,7 +218,7 @@ export class StartConfigComponent implements OnInit {
         csvFile: this.csvFile
       };
 
-      this.start.emit(config);
+      this.start.emit({ config, fileName: this.csvFile.name });
     } catch (error) {
       this.errorMessage = 'CSVファイルの読み込みに失敗しました: ' + (error as Error).message;
       this.isLoading = false;
