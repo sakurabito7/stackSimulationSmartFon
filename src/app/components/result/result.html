@@ -114,10 +114,6 @@
     </div>
 
     <div class="actions-section">
-      <button class="save-button" (click)="saveToDatabase()" [disabled]="isSaving">
-        {{ isSaving ? '保存中...' : 'データベースに保存' }}
-      </button>
-      <div class="save-message" *ngIf="saveMessage">{{ saveMessage }}</div>
       <button class="restart-button" (click)="onRestart()">
         最初からやり直す
       </button>

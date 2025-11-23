@@ -535,11 +535,19 @@ export class SimulationComponent implements OnInit, OnChanges {
       const longBorderColors: string[] = [];
       const longBorderWidths: number[] = [];
       const longLabelColors: string[] = [];
+      const longPointStyles: any[] = [];
 
       longPositions.forEach(p => {
         // 損益率を計算
         const profitRate = ((this.currentPrice - p.entryPrice) / p.entryPrice) * 100;
         const absProfitRate = Math.abs(profitRate);
+
+        // 損益がマイナスの場合は四角、プラスの場合は丸
+        if (profitRate < 0) {
+          longPointStyles.push('rect'); // 四角
+        } else {
+          longPointStyles.push('circle'); // 丸
+        }
 
         // ±3%を超えた場合、青い枠を付ける
         if (absProfitRate > 3) {
@@ -570,6 +578,7 @@ export class SimulationComponent implements OnInit, OnChanges {
         borderColor: longBorderColors,
         pointBorderColor: longBorderColors,
         pointBorderWidth: longBorderWidths,
+        pointStyle: longPointStyles,
         pointRadius: 10,
         pointHoverRadius: 12
       });
@@ -581,11 +590,19 @@ export class SimulationComponent implements OnInit, OnChanges {
       const shortBorderColors: string[] = [];
       const shortBorderWidths: number[] = [];
       const shortLabelColors: string[] = [];
+      const shortPointStyles: any[] = [];
 
       shortPositions.forEach(p => {
         // 損益率を計算
         const profitRate = ((p.entryPrice - this.currentPrice) / p.entryPrice) * 100;
         const absProfitRate = Math.abs(profitRate);
+
+        // 損益がマイナスの場合は四角、プラスの場合は丸
+        if (profitRate < 0) {
+          shortPointStyles.push('rect'); // 四角
+        } else {
+          shortPointStyles.push('circle'); // 丸
+        }
 
         // ±3%を超えた場合、赤い枠を付ける
         if (absProfitRate > 3) {
@@ -616,6 +633,7 @@ export class SimulationComponent implements OnInit, OnChanges {
         borderColor: shortBorderColors,
         pointBorderColor: shortBorderColors,
         pointBorderWidth: shortBorderWidths,
+        pointStyle: shortPointStyles,
         pointRadius: 10,
         pointHoverRadius: 12
       });

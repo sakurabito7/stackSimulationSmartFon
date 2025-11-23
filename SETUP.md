@@ -9,9 +9,13 @@ Firebase Hostingにデプロイされており、987銘柄の実データを使�
 - 4分割グリッドレイアウト（スマホ最適化）
 - ロング/ショート両建て取引
 - 3倍レバレッジ信用取引（証拠金30%）
-- 相殺決済機能（クリックで一括決済）
+- 相殺決済機能（利益になる組み合わせのみ表示、クリックで一括決済）
+- **Firebase Firestoreとの連携**（シミュレーション終了時に自動保存）
+- **日次データ追跡**（全期間の日次データ記録、途中終了も対応）
+- **CSV/ZIPエクスポート**（日次データ、取引履歴）
+- 履歴画面（過去シミュレーション閲覧）
 - 投資成績分析
-- 条件付きスタイリング（±3%枠、±8%黄色ラベル）
+- 条件付きスタイリング（損益で丸/四角、±3%枠、±8%黄色ラベル）
 - アニメーション無効化（パフォーマンス向上）
 
 ## 技術スタック
@@ -21,7 +25,10 @@ Firebase Hostingにデプロイされており、987銘柄の実データを使�
 - **Chart.js**: 4.5.1
 - **ng2-charts**: 8.0.0
 - **chartjs-plugin-datalabels**: 2.2.0
+- **Firebase Firestore**: データベース（シミュレーション履歴保存）
 - **Firebase Hosting**: デプロイプラットフォーム
+- **JSZip**: 3.10.1（一括エクスポート用）
+- **file-saver**: 2.0.5（ファイルダウンロード用）
 
 ## セットアップ手順
 
@@ -77,23 +84,32 @@ stock-simulation/
 │   │   │   │   ├── simulation.ts
 │   │   │   │   ├── simulation.html
 │   │   │   │   └── simulation.css
-│   │   │   └── result/            # 結果画面
-│   │   │       ├── result.ts
-│   │   │       ├── result.html
-│   │   │       └── result.css
+│   │   │   ├── result/            # 結果画面
+│   │   │   │   ├── result.ts
+│   │   │   │   ├── result.html
+│   │   │   │   └── result.css
+│   │   │   └── history/           # 履歴画面（Firestore連携）
+│   │   │       ├── history.ts
+│   │   │       ├── history.html
+│   │   │       └── history.css
 │   │   ├── models/                # データモデル
 │   │   │   ├── position.model.ts
 │   │   │   ├── trade.model.ts
 │   │   │   ├── stock-data.model.ts
-│   │   │   └── simulation-config.model.ts
+│   │   │   ├── simulation-config.model.ts
+│   │   │   └── simulation-record.model.ts  # Firestore用
 │   │   ├── services/              # ビジネスロジック
 │   │   │   ├── stock-data.service.ts
 │   │   │   ├── trading.service.ts
-│   │   │   └── calculation.service.ts
+│   │   │   ├── calculation.service.ts
+│   │   │   ├── database.service.ts   # Firestore連携
+│   │   │   └── export.service.ts     # CSV/ZIPエクスポート
 │   │   ├── app.ts                 # ルートコンポーネント
 │   │   ├── app.html
 │   │   ├── app.css
 │   │   └── app.config.ts          # アプリ設定
+│   ├── environments/
+│   │   └── environment.ts         # Firebase設定
 │   ├── styles.css                 # グローバルスタイル
 │   └── index.html
 ├── public/
@@ -104,6 +120,7 @@ stock-simulation/
 │           ├── 1305.csv
 │           └── ... (987ファイル)
 ├── firebase.json                  # Firebase設定
+├── firestore.rules                # Firestoreセキュリティルール
 ├── .firebaserc                    # Firebaseプロジェクト設定
 ├── package.json
 ├── angular.json
@@ -169,8 +186,21 @@ export interface SimulationConfig {
 - ポートフォリオ評価
 
 #### CalculationService
-- 相殺決済ポイント算出
+- 相殺決済ポイント算出（利益になる組み合わせのみ）
+- 損益計算による自動フィルタリング
 - テクニカル指標計算
+
+#### DatabaseService
+- Firebase Firestoreとの連携
+- シミュレーション結果の自動保存
+- 履歴データの取得・管理
+- 日次データの保存
+
+#### ExportService
+- 日次データのCSV生成
+- 取引履歴のCSV生成
+- 複数シミュレーションの一括ZIPダウンロード
+- サマリーCSV生成
 
 ### ✅ コンポーネント（`src/app/components/`）
 
@@ -219,9 +249,11 @@ export interface SimulationConfig {
 - Chart.js散布図によるポジション可視化
 - ロング（青）/ショート（赤）の識別
 - 現在価格ライン表示（緑、ラインの上にラベル）
-- 相殺決済ポイントライン（オレンジ、SP1, SP2...）
+- 相殺決済ポイントライン（オレンジ、SP1, SP2...、利益になる組み合わせのみ）
 - Y軸: 過去3ヶ月の株価平均を中心に設定
 - 条件付きスタイリング:
+  - 損益プラス: 丸形（●）で表示
+  - 損益マイナス: 四角形（■）で表示
   - ±3%超: ポジションに枠表示（買い=青、売り=赤）
   - ±8%超: ラベルが黄色に変化
 - アニメーション無効（`animation: false`）
@@ -238,12 +270,30 @@ export interface SimulationConfig {
 #### 3. result（結果画面）
 
 **表示内容**:
+- **シミュレーション終了時に自動的にFirestoreに保存**
 - 投資成績サマリー
   - 勝率、損益率
   - 期待値、最大ドローダウン
   - 総取引数、勝ち数、負け数
   - 平均利益、平均損失
   - プロフィットファクター
+- 売買履歴のCSVエクスポート
+
+#### 4. history（履歴画面）
+
+**表示内容**:
+- 過去のシミュレーション結果一覧
+- 各シミュレーションの概要（日時、銘柄、期間、最終資産、利益率など）
+- 個別の日次データCSVダウンロード
+- 全シミュレーションの一括ZIPダウンロード
+  - summary.csv: 全シミュレーションの概要
+  - daily_data_001_*.csv: 各シミュレーションの日次データ
+  - trades_001_*.csv: 各シミュレーションの取引履歴
+
+**日次データCSVの内容**:
+- 日付、現金残高、含み損益、総資産、ポジション数、株価
+- シミュレーション期間の全日分を記録
+- 途中で終了ボタンを押した場合も、その時点までのデータを保存
 
 ### ✅ スタイリング
 
@@ -480,6 +530,20 @@ https://github.com/sakurabito7/stackSimulationSmartFon/issues
 
 ---
 
-**最終更新**: 2025年11月20日
-**バージョン**: 1.0.0
+**最終更新**: 2025年11月23日
+**バージョン**: 2.0.0
 **ステータス**: ✅ 完成・デプロイ済み
+
+## 📝 最近の更新（2025年11月23日）
+
+### 新機能
+- **Firebase Firestoreとの連携**: シミュレーション終了時に自動保存
+- **日次データ追跡**: 全シミュレーション期間の完全記録
+- **途中終了対応**: 終了ボタンを押した時点までの日次データを保存
+- **CSV/ZIPエクスポート**: 日次データと取引履歴のダウンロード
+- **履歴画面**: 過去シミュレーション閲覧と一括エクスポート
+
+### UI/UX改善
+- **ポジション表示**: 損益に応じて丸（利益）/四角（損失）で視覚化
+- **相殺決済ポイント**: 利益になる組み合わせのみ表示
+- **自動保存**: 結果画面の「保存」ボタンを削除し、自動的にFirestoreに保存

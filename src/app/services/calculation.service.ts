@@ -156,6 +156,23 @@ export class CalculationService {
 
     const offsetPrice = totalCost / totalQuantity;
 
+    // この相殺価格で精算した場合の損益を計算
+    let totalProfit = 0;
+    for (const position of positions) {
+      if (position.type === PositionType.LONG) {
+        // ロング: (相殺価格 - 建値) × 数量
+        totalProfit += (offsetPrice - position.entryPrice) * position.quantity;
+      } else {
+        // ショート: (建値 - 相殺価格) × 数量
+        totalProfit += (position.entryPrice - offsetPrice) * position.quantity;
+      }
+    }
+
+    // 損益がマイナスになる組み合わせは表示しない
+    if (totalProfit < 0) {
+      return null;
+    }
+
     const longQuantity = positions
       .filter(p => p.type === PositionType.LONG)
       .reduce((sum, p) => sum + p.quantity, 0);
