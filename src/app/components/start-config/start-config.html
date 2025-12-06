@@ -3,6 +3,36 @@
 
   <form (ngSubmit)="onSubmit()" #configForm="ngForm">
     <div class="form-group">
+      <label for="stockCode">銘柄コード入力</label>
+      <div class="stock-code-input-group">
+        <input
+          type="text"
+          id="stockCode"
+          [(ngModel)]="stockCodeInput"
+          name="stockCode"
+          placeholder="例: 7203"
+          (input)="onStockCodeInput()"
+          [disabled]="isLoading"
+          maxlength="10">
+        <button
+          type="button"
+          (click)="searchByStockCode()"
+          [disabled]="isLoading || !stockCodeInput"
+          class="search-button">
+          検索
+        </button>
+      </div>
+      <div *ngIf="filteredFiles.length > 0 && showSuggestions" class="suggestions-dropdown">
+        <div
+          *ngFor="let file of filteredFiles"
+          class="suggestion-item"
+          (click)="selectSuggestion(file)">
+          {{ file.label }}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
       <label for="preloadFile">CSVファイル *</label>
       <select
         id="preloadFile"

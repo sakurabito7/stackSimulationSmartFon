@@ -15,6 +15,7 @@ h2 {
 
 .form-group {
   margin-bottom: 1.5rem;
+  position: relative;
 }
 
 .form-row-3 {
@@ -110,6 +111,69 @@ h2 {
   margin-top: 0.5rem;
   color: var(--color-label);
   font-size: 14px;
+}
+
+/* 銘柄コード入力グループ */
+.stock-code-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.stock-code-input-group input {
+  flex: 1;
+}
+
+.search-button {
+  padding: 12px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 44px;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.search-button:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.search-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* サジェストドロップダウン */
+.suggestions-dropdown {
+  position: absolute;
+  z-index: 1000;
+  width: calc(100% - 90px);
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+}
+
+.suggestion-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #e3f2fd;
 }
 
 .error-message {

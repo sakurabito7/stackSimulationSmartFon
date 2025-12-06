@@ -22,6 +22,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "../stock_data",
+                "output": "/assets/stock_data"
               }
             ],
             "styles": [

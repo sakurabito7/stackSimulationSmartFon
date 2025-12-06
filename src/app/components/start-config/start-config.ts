@@ -26,6 +26,11 @@ export class StartConfigComponent implements OnInit {
   useSampleData: boolean = false;
   selectedPreloadFile: string = '';
 
+  // 銘柄コード検索用
+  stockCodeInput: string = '';
+  filteredFiles: { value: string; label: string }[] = [];
+  showSuggestions: boolean = false;
+
   // プリロードファイルリスト
   preloadFiles: { value: string; label: string }[] = [
     { value: '', label: 'ファイルを選択してください' }
@@ -36,15 +41,15 @@ export class StartConfigComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     // JSONから銘柄リストを読み込む
     try {
-      const response = await fetch('/assets/stock-data/stocks.json');
+      const response = await fetch('/assets/stock_data_list.json');
       if (response.ok) {
-        const stockCodes: string[] = await response.json();
-        // 銘柄コードでソート済みのリストを追加
+        const stockFiles: string[] = await response.json();
+        // ファイル名から表示ラベルを生成（(xxxx)銘柄名.csv → (xxxx)銘柄名）
         this.preloadFiles = [
           { value: '', label: 'ファイルを選択してください' },
-          ...stockCodes.map(code => ({
-            value: `${code}.csv`,
-            label: `銘柄コード: ${code}`
+          ...stockFiles.map(fileName => ({
+            value: fileName,
+            label: fileName.replace('.csv', '')
           }))
         ];
       }
@@ -63,6 +68,65 @@ export class StartConfigComponent implements OnInit {
     }
   }
 
+  // 銘柄コード入力時のフィルタリング
+  onStockCodeInput(): void {
+    const code = this.stockCodeInput.trim();
+    if (code.length === 0) {
+      this.filteredFiles = [];
+      this.showSuggestions = false;
+      return;
+    }
+
+    // 銘柄コードで前方一致検索（括弧内の数字で検索）
+    this.filteredFiles = this.preloadFiles
+      .filter(file => {
+        if (!file.value) return false;
+        // (xxxx) の形式から銘柄コードを抽出
+        const match = file.label.match(/^\((\d+)\)/);
+        if (match) {
+          return match[1].startsWith(code);
+        }
+        return false;
+      })
+      .slice(0, 10); // 最大10件まで表示
+
+    this.showSuggestions = this.filteredFiles.length > 0;
+  }
+
+  // 銘柄コードで検索
+  searchByStockCode(): void {
+    const code = this.stockCodeInput.trim();
+    if (!code) return;
+
+    // 完全一致または前方一致で検索
+    const found = this.preloadFiles.find(file => {
+      if (!file.value) return false;
+      const match = file.label.match(/^\((\d+)\)/);
+      return match && match[1] === code;
+    });
+
+    if (found) {
+      this.selectSuggestion(found);
+    } else if (this.filteredFiles.length === 1) {
+      // 候補が1件のみの場合は自動選択
+      this.selectSuggestion(this.filteredFiles[0]);
+    } else if (this.filteredFiles.length > 1) {
+      // 複数候補がある場合はサジェストを表示
+      this.showSuggestions = true;
+    } else {
+      this.errorMessage = `銘柄コード「${code}」が見つかりません`;
+    }
+  }
+
+  // サジェストから選択
+  selectSuggestion(file: { value: string; label: string }): void {
+    this.selectedPreloadFile = file.value;
+    this.stockCodeInput = '';
+    this.filteredFiles = [];
+    this.showSuggestions = false;
+    this.onPreloadFileSelected();
+  }
+
   // プルダウンから選択
   async onPreloadFileSelected(): Promise<void> {
     if (!this.selectedPreloadFile) {
@@ -75,7 +139,7 @@ export class StartConfigComponent implements OnInit {
     this.errorMessage = '';
 
     try {
-      const response = await fetch(`/assets/stock-data/${this.selectedPreloadFile}`);
+      const response = await fetch(`/assets/stock_data/${encodeURIComponent(this.selectedPreloadFile)}`);
       if (!response.ok) {
         throw new Error('ファイルの読み込みに失敗しました');
       }

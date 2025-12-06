@@ -249,12 +249,35 @@ export class SimulationComponent implements OnInit, OnChanges {
       const priceDiff = data.close - prevPrice;
       const priceChangeRate = ((priceDiff / prevPrice) * 100);
 
+      // 20日間の高値・安値更新判定（終値ベース）
+      let is20DayHigh = false;
+      let is20DayLow = false;
+
+      if (absoluteIdx > 0) {
+        // 過去20日間（当日を除く）のデータを取得
+        const lookbackStart = Math.max(0, absoluteIdx - 20);
+        const lookbackEnd = absoluteIdx; // 当日を含まない
+        const lookbackData = this.stockData.slice(lookbackStart, lookbackEnd);
+
+        if (lookbackData.length > 0) {
+          const past20DayHighClose = Math.max(...lookbackData.map(d => d.close));
+          const past20DayLowClose = Math.min(...lookbackData.map(d => d.close));
+
+          // 当日の終値が過去20日の最高終値を上抜ける
+          is20DayHigh = data.close > past20DayHighClose;
+          // 当日の終値が過去20日の最低終値を下抜ける
+          is20DayLow = data.close < past20DayLowClose;
+        }
+      }
+
       return {
         date: data.date,
         close: data.close,
         priceDiff,
         priceChangeRate,
-        trades
+        trades,
+        is20DayHigh,
+        is20DayLow
       };
     });
 

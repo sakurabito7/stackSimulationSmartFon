@@ -64,6 +64,17 @@ h2 {
   color: var(--color-loss);
 }
 
+/* 20日間高値・安値更新 */
+.high-breakout {
+  color: #1976D2;  /* 青 - 高値更新 */
+  font-weight: bold;
+}
+
+.low-breakout {
+  color: #D32F2F;  /* 赤 - 安値更新 */
+  font-weight: bold;
+}
+
 .long {
   color: var(--color-long);
 }

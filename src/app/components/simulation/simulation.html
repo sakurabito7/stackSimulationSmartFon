@@ -67,7 +67,7 @@
           @for (item of historyData; track item.date) {
             <tr [class.current-day]="getDateString(item.date) === getDateString(currentDate)">
               <td>{{ item.date | date:'MM/dd' }}</td>
-              <td>{{ item.close | number:'1.0-0' }}</td>
+              <td [class.high-breakout]="item.is20DayHigh" [class.low-breakout]="item.is20DayLow">{{ item.close | number:'1.0-0' }}</td>
               <td [class.profit]="item.priceChangeRate > 0" [class.loss]="item.priceChangeRate < 0">
                 {{ item.priceChangeRate > 0 ? '+' : '' }}{{ item.priceChangeRate | number:'1.2-2' }}%
               </td>
